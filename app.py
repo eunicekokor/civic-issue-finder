@@ -3,6 +3,7 @@
 # -------------------
 
 from flask import Flask, render_template, request, jsonify
+import data_helpers as dh
 import json, time, os
 from urlparse import urljoin
 
@@ -10,12 +11,18 @@ from uritemplate import expand
 from requests import get
 from requests.exceptions import ConnectionError, Timeout
 
+from httplib2 import Http
+from oauth2client.client import SignedJwtAssertionCredentials
+from apiclient.discovery import build
+
+from config import *
+
 # -------------------
 # Init
 # -------------------
 
 app = Flask(__name__,  static_folder='static', static_url_path='/geeks/civicissues/static')
-app.secret_key = os.environ['SECRET']
+#app.secret_key = os.environ['SECRET']
 
 CFAPI_BASE = 'https://www.codeforamerica.org/api/'
 
@@ -23,11 +30,35 @@ CFAPI_BASE = 'https://www.codeforamerica.org/api/'
 # Routes
 # -------------------
 
+#
+# Setup for all GA queries
+#
+def login_to_google_analytics():
+    credentials = SignedJwtAssertionCredentials(GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_SERVICE_ACCOUNT_SECRET_KEY,
+    'https://www.googleapis.com/auth/analytics.readonly')
+    http = Http()
+    credentials.authorize(http)
+    service = build("analytics", "v3", http=http)
+    return service, credentials.access_token
+
+service, access_token = login_to_google_analytics()
+
 @app.route('/geeks/civicissues')
 def index():
+    data = {
+    "total_page_views":"",
+    "total_clicks":"",
+    }
+
+    for k in data.iterkeys():
+        data[k] = dh.get_analytics_query(k)
+
+    data["clicks_per_view"] = int(100 * int(data["total_clicks"])/float(int(data["total_page_views"])))
+    data["access_token"] = access_token
+    
     header = get("http://www.codeforamerica.org/fragments/global-header.html")
     footer = get("http://www.codeforamerica.org/fragments/global-footer.html")
-    return render_template('index.html', header=header.content, footer=footer.content)
+    return render_template('index.html', header=header.content, footer=footer.content, data=data)
 
 
 @app.route('/geeks/civicissues/embed')
