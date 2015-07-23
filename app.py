@@ -45,6 +45,13 @@ service, access_token = login_to_google_analytics()
 
 @app.route('/geeks/civicissues')
 def index():
+    
+    header = get("http://www.codeforamerica.org/fragments/global-header.html")
+    footer = get("http://www.codeforamerica.org/fragments/global-footer.html")
+    return render_template('index.html', header=header.content, footer=footer.content)
+
+@app.route('/geeks/civicissues/analytics')
+def analytics():
     data = {
     "total_page_views":"",
     "total_clicks":"",
@@ -55,10 +62,10 @@ def index():
 
     data["clicks_per_view"] = int(100 * int(data["total_clicks"])/float(int(data["total_page_views"])))
     data["access_token"] = access_token
-    
+
     header = get("http://www.codeforamerica.org/fragments/global-header.html")
     footer = get("http://www.codeforamerica.org/fragments/global-footer.html")
-    return render_template('index.html', header=header.content, footer=footer.content, data=data)
+    return render_template('analytics.html', header=header.content, footer=footer.content, data=data)
 
 
 @app.route('/geeks/civicissues/embed')

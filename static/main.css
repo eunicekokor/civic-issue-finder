@@ -21,3 +21,7 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+#chart-4-container{
+  height: 20em;
+}
